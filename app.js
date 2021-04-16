@@ -1,9 +1,14 @@
 import express from'express'
-import bodyparser from 'body-parser'
-import helmet from 'helmet'
 
+// config env
+require('dotenv').config()
+
+//Local Import Files
+import { routerV1 } from './routes'
 
 const app = express();
+
+app.use('/api/v1', routerV1)
 
 // simple route
 app.get('/', function (req, res) {
