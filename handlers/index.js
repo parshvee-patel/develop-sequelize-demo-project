@@ -1,5 +1,3 @@
-import { Staffdetails } from './staff_details'
+import { Staffdetails } from "./staff_details";
 
-export {
-    Staffdetails
-}
+export { Staffdetails };

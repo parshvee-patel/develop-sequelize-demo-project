@@ -1,21 +1,23 @@
-import express from'express'
-
+// require("dotenv").config();
+import express from "express";
+import bodyparser from "body-parser"
 // config env
-require('dotenv').config()
 
 //Local Import Files
-import { routerV1 } from './routes'
+import * as config from "./config";
+import { routerV1 } from "./routes";
 
 const app = express();
-
-app.use('/api/v1', routerV1)
+app.use(bodyparser.json())
+app.use(bodyparser.urlencoded({ extended: false }))
+app.use("/api/v1", routerV1);
 
 // simple route
-app.get('/', function (req, res) {
-  res.send('Hello World!');
+app.get("/", function (req, res) {
+  res.send("Hello World!");
 });
 
 // set port, listen for requests
-app.listen(8000, function () {
-  console.log('Example app listening on port 8000!');
+app.listen(config.PORT, () => {
+  console.log("Staff app listening on" + " " + config.PORT);
 });
