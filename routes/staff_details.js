@@ -1,83 +1,155 @@
-import express, { Router } from "express"
+import express, { Router } from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path"
 
+//Import Local Files
 import { httpStatus } from "../helpers";
 import { Staffdetails } from "../handlers";
 
 const StaffDetailsRouter = Router();
 
+//Applying Multer File and setup multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const folder = `public/uploads/staff/profile`;
+        if (!fs.existsSync(folder)) {
+            fs.mkdirSync(folder, { recursive: true });
+        }
+        cb(null, folder);
+    },
+    filename: (req, file, cb) => {
+        const datetimestamp = Date.now();
+        const originalfilename = `${file.fieldname}-${datetimestamp}${path.extname(
+      file.originalname
+    )}`;
+        cb(null, originalfilename);
+    },
+});
+
+const profilefilter = (req, file, cb) => {
+    if (
+        file.mimetype == "image/jpeg" ||
+        file.mimetype == "image/png" ||
+        file.mimetype == "image/jpg"
+    ) {
+        return cb(null, true);
+    } else {
+        return cb(new Error("Only image file is allowed!"), false);
+    }
+};
+
+const uploadFile = multer({ storage: storage, fileFilter: profilefilter });
+const singleProfile = uploadFile.single("profile")
+
 // Create a new Staff
 StaffDetailsRouter.post("/staffdetails", (req, res) => {
-  Staffdetails.createStaff(req)
-    .then((data) => {
-      res.status(httpStatus.OK)
-        .json({ Message: "Staff Details Created Successfully" });
+    singleProfile(req, res, err => {
+        if (err) {
+            console.log(err.message)
+            return res.status(400).json({ message: err.message })
+        }
+        const file = req.file
+        let path
+        if (file) {
+            path = req.file.destination + '/' + req.file.filename
+        }
+        Staffdetails.createStaff({...req.body, profileImage: path })
+            .then(data => {
+                res
+                    .status(httpStatus.Created)
+                    .json(data);
+            })
+            .catch((err) => {
+                res.status(httpStatus.Bad_Request).json({
+                    code: httpStatus.Bad_Request,
+                    error: err,
+                });
+            });
     })
-    .catch((err) => {
-      res.status(httpStatus.Bad_Request).json({
-        code: httpStatus.Bad_Request,
-        error: err,
-      });
-    });
 });
+
 
 // Retrieve all Staff
 StaffDetailsRouter.get("/staffdetails", (req, res) => {
-  Staffdetails.getStaff(req)
-    .then((data) => {
-      res.status(httpStatus.OK).json({ Message: "Get All Staff Details" });
-    })
-    .catch((err) => {
-      res.status(httpStatus.Bad_Request).json({
-        code: httpStatus.Bad_Request,
-        error: err,
-      });
-    });
+    Staffdetails.getStaff(req)
+        .then((data) => {
+            if (!data.length) {
+                res
+                    .status(httpStatus.No_Content)
+                    .json({ Message: "Staff Data Not Found" });
+            } else {
+                res.status(httpStatus.OK).json({ Data: data });
+            }
+        })
+        .catch((err) => {
+            res.status(httpStatus.Bad_Request).json({
+                code: httpStatus.Bad_Request,
+                error: err,
+            });
+        });
 });
 
 //Retrieve a single staff with id
 StaffDetailsRouter.get("/staffdetails/:id", (req, res) => {
-  Staffdetails.getStaffById(req)
-    .then((data) => {
-      res.status(httpStatus.OK).json({ Message: "Get Staff Details by Id" });
-    })
-    .catch((err) => {
-      res.status(httpStatus.Bad_Request).json({
-        code: httpStatus.Bad_Request,
-        error: err,
-      });
-    });
+    Staffdetails.getStaffById(req.params.id)
+        .then((data) => {
+            if (!data || data == null) {
+                res.status(httpStatus.No_Content).json({ Message: "Data Not Found" });
+            } else {
+                res.status(httpStatus.OK).json({ Data: data });
+            }
+        })
+        .catch((err) => {
+            res.status(httpStatus.Bad_Request).json({
+                code: httpStatus.Bad_Request,
+                error: err,
+            });
+        });
 });
 
 // Update a Staff with id
 StaffDetailsRouter.put("/staffdetails/:id", (req, res) => {
-  Staffdetails.updateStaffById(req)
-    .then((data) => {
-      res
-        .status(httpStatus.OK)
-        .json({ Message: "Staff Details Updated Successfully" });
+    console.log(req.params.id, "update id")
+    singleProfile(req, res, err => {
+        if (err) {
+            console.log(err.message)
+            return res.status(400).json({ message: err.message })
+        }
+        const file = req.file
+        let path
+        if (file) {
+            path = req.file.destination + '/' + req.file.filename
+        }
+        Staffdetails.updateStaffById({...req.body, id: req.params.id, profileImage: path })
+            .then((data) => {
+                res.status(httpStatus.OK).json({ data });
+            })
+            .catch((err) => {
+                res.status(httpStatus.Bad_Request).json({
+                    code: httpStatus.Bad_Request,
+                    error: err,
+                });
+            });
     })
-    .catch((err) => {
-      res.status(httpStatus.Bad_Request).json({
-        code: httpStatus.Bad_Request,
-        error: err,
-      });
-    });
 });
 
 // Delete a Staff with id
 StaffDetailsRouter.delete("/staffdetails/:id", (req, res) => {
-  Staffdetails.deleteStaffById(req)
-    .then((data) => {
-      res
-        .status(httpStatus.OK)
-        .json({ Message: "Staff Details Delete Successfully" });
-    })
-    .catch((err) => {
-      res.status(httpStatus.Bad_Request).json({
-        code: httpStatus.Bad_Request,
-        error: err,
-      });
-    });
+    Staffdetails.deleteStaffById(req.params.id)
+        .then((data) => {
+            if (!data) {
+                res.status(httpStatus.No_Content).json({ Message: "Data Not Found." });
+            } else {
+                res.status(httpStatus.OK).json({ Data: data });
+            }
+        })
+        .catch((err) => {
+            res.status(httpStatus.Bad_Request).json({
+                code: httpStatus.Bad_Request,
+                error: err,
+            });
+        });
 });
 
 export { StaffDetailsRouter };
