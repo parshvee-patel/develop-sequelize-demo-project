@@ -41,18 +41,30 @@ const StaffDetails = orm.define("Staff_Details", {
     firstName: {
         type: DataTypes.STRING(50),
         allowNull: false,
+        validate: {
+            notEmpty: true
+        },
     },
     lastName: {
         type: DataTypes.STRING(50),
         allowNull: false,
+        validate: {
+            notEmpty: true
+        },
     },
     email: {
         type: DataTypes.STRING(80),
         allowNull: false,
+        validate: {
+            notEmpty: true
+        },
     },
     password: {
         type: DataTypes.STRING(200),
         allowNull: false,
+        validate: {
+            notEmpty: true
+        },
     },
     contactNo: {
         type: DataTypes.STRING(50),
@@ -80,7 +92,6 @@ const StaffDetails = orm.define("Staff_Details", {
     modifiedOn: {
         type: DataTypes.DATE,
     },
-
 }, {
     timestamps: true,
     createdAt: "createdOn",

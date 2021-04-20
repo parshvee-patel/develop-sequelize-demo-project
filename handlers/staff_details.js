@@ -1,15 +1,19 @@
 import StaffDB from "../sequelize";
+import { passwordfunction } from "../helpers"
 
 /**
- * Create Staff Details Function
+ * This method is to create the staff
  */
 const createStaff = async(req, res) => {
     try {
+        /**
+         * Create a staff
+         */
         const staffData = await StaffDB.StaffDetails.create({
             firstName: req.firstName,
             lastName: req.lastName,
             email: req.email,
-            password: req.password,
+            password: await passwordfunction.encryptPassword(req.password),
             contactNo: req.contactNo,
             address: req.address,
             city: req.city,
@@ -63,14 +67,13 @@ const updateStaffById = async(dataDetails, params) => {
             firstName: dataDetails.firstName,
             lastName: dataDetails.lastName,
             email: dataDetails.email,
-            password: dataDetails.password,
+            password: await passwordfunction.encryptPassword(dataDetails.password),
             contactNo: dataDetails.contactNo,
             address: dataDetails.address,
             city: dataDetails.city,
             zipCode: dataDetails.zipCode,
             profileImage: dataDetails.profileImage,
         }
-
         const staff = await StaffDB.StaffDetails
             .update(staffData, {
                 where: {

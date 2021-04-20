@@ -1,11 +1,13 @@
 import express, { Router } from "express";
 import multer from "multer";
 import fs from "fs";
-import path from "path"
+import path from "path";
 
 //Import Local Files
 import { httpStatus } from "../helpers";
 import { Staffdetails } from "../handlers";
+import { check, validationResult } from "express-validator";
+// import { staffDetailsValidation } from "../validation/staffDetails"
 
 const StaffDetailsRouter = Router();
 
@@ -40,35 +42,55 @@ const profilefilter = (req, file, cb) => {
 };
 
 const uploadFile = multer({ storage: storage, fileFilter: profilefilter });
-const singleProfile = uploadFile.single("profile")
+const singleProfile = uploadFile.single("profile");
 
 // Create a new Staff
-StaffDetailsRouter.post("/staffdetails", (req, res) => {
-    singleProfile(req, res, err => {
-        if (err) {
-            console.log(err.message)
-            return res.status(400).json({ message: err.message })
-        }
-        const file = req.file
-        let path
-        if (file) {
-            path = req.file.destination + '/' + req.file.filename
-        }
-        Staffdetails.createStaff({...req.body, profileImage: path })
-            .then(data => {
-                res
-                    .status(httpStatus.Created)
-                    .json(data);
-            })
-            .catch((err) => {
-                res.status(httpStatus.Bad_Request).json({
-                    code: httpStatus.Bad_Request,
-                    error: err,
-                });
-            });
+StaffDetailsRouter.post(
+    "/staffdetails",
+    check("email").isEmail().withMessage("Invalid Email Address"),
+    check("password").trim()
+    .isStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
     })
-});
-
+    .withMessage(
+        "Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+    check("contactNo").isMobilePhone(),
+    check("firstName").isAlphanumeric().isLength({ min: 3 }),
+    check("lastName").isAlphanumeric(), (req, res) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                errors: errors.array()
+            });
+        }
+        singleProfile(req, res, (err) => {
+            if (err) {
+                console.log(err.message);
+                return res.status(400).json({ message: err.message });
+            }
+            const file = req.file;
+            let path;
+            if (file) {
+                path = req.file.destination + "/" + req.file.filename;
+            }
+            Staffdetails.createStaff({...req.body, profileImage: path })
+                .then((data) => {
+                    res.status(httpStatus.Created).json(data);
+                })
+                .catch((err) => {
+                    res.status(httpStatus.Bad_Request).json({
+                        code: httpStatus.Bad_Request,
+                        error: err,
+                    });
+                });
+        });
+    }
+);
 
 // Retrieve all Staff
 StaffDetailsRouter.get("/staffdetails", (req, res) => {
@@ -110,18 +132,18 @@ StaffDetailsRouter.get("/staffdetails/:id", (req, res) => {
 
 // Update a Staff with id
 StaffDetailsRouter.put("/staffdetails/:id", (req, res) => {
-    console.log(req.params.id, "update id")
-    singleProfile(req, res, err => {
+    singleProfile(req, res, (err) => {
         if (err) {
-            console.log(err.message)
-            return res.status(400).json({ message: err.message })
+            console.log(err.message);
+            return res.status(400).json({ message: err.message });
         }
-        const file = req.file
-        let path
+        const file = req.file;
+        let path;
         if (file) {
-            path = req.file.destination + '/' + req.file.filename
+            path = req.file.destination + "/" + req.file.filename;
         }
-        Staffdetails.updateStaffById({...req.body, id: req.params.id, profileImage: path })
+        // Staffdetails.updateStaffById({...req.body, id: req.params.id, profileImage: path })
+        Staffdetails.updateStaffById({...req.body, profileImage: path }, { id: req.params.id })
             .then((data) => {
                 res.status(httpStatus.OK).json({ data });
             })
@@ -131,7 +153,7 @@ StaffDetailsRouter.put("/staffdetails/:id", (req, res) => {
                     error: err,
                 });
             });
-    })
+    });
 });
 
 // Delete a Staff with id
