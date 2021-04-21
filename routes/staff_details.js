@@ -2,12 +2,12 @@ import express, { Router } from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { validationResult, body, check } from "express-validator";
 
 //Import Local Files
 import { httpStatus } from "../helpers";
 import { Staffdetails } from "../handlers";
-import { check, validationResult } from "express-validator";
-// import { staffDetailsValidation } from "../validation/staffDetails"
+// import { validateStaffDetails } from "../validation/staffDetails"
 
 const StaffDetailsRouter = Router();
 
@@ -47,20 +47,15 @@ const singleProfile = uploadFile.single("profile");
 // Create a new Staff
 StaffDetailsRouter.post(
     "/staffdetails",
-    check("email").isEmail().withMessage("Invalid Email Address"),
-    check("password").trim()
-    .isStrongPassword({
-        minLength: 8,
-        minLowercase: 1,
-        minUppercase: 1,
-        minNumbers: 1,
-    })
-    .withMessage(
-        "Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
-    check("contactNo").isMobilePhone(),
-    check("firstName").isAlphanumeric().isLength({ min: 3 }),
-    check("lastName").isAlphanumeric(), (req, res) => {
+    // check("email").isEmail().normalizeEmail().withMessage("Your email is not valid"),
+    // check(
+    //     "password",
+    //     "Password should be combination of one uppercase , one lower case, one special char, one digit and min 8 , max 20 char long"
+    // ).matches("/^(?=.*d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/"),
+    // check("contactNo").isMobilePhone(),
+    // check("firstName").isAlphanumeric().isLength({ min: 3 }),
+    // check("lastName").isAlphanumeric(), 
+    (req, res) => {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             return res.status(400).json({
